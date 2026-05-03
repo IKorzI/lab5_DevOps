@@ -1,5 +1,5 @@
 # Модель: Теорія масового обслуговування (Модель M/M/m)
-# Автор: Сурков Максим Сергійович, група АІ-233
+# Автор: Сурков Максим Сергійович, група АІ-233   
 
 from flask import Flask, request, jsonify
 import math
@@ -7,28 +7,35 @@ import math
 app = Flask(__name__)
 
 def calculate_erlang_c(lam, mu, m):
-    """Обчислює ймовірність черги за формулою Ерланга С."""
-    rho = lam / (m * mu)
-    if rho >= 1:
-        return "Система перевантажена"
+    """Обчислює ймовірність черги за формулою Ерланга С.""" 
+    rho = lam / (m * mu) 
+    if rho >= 1: 
+        return "Система перевантажена" 
 
-    # Обчислення P0
-    sum_p = sum(((m * rho)**i) / math.factorial(i) for i in range(m))
-    p0_inv = sum_p + (((m * rho)**m) / math.factorial(m)) * (1 / (1 - rho))
-    p0 = 1 / p0_inv
+    # Обчислення P0   
+    sum_p = sum(((m * rho)**i) / math.factorial(i) for i in range(m)) 
+    p0_inv = sum_p + (((m * rho)**m) / math.factorial(m)) * (1 / (1 - rho)) 
+    p0 = 1 / p0_inv 
 
-    # Обчислення ймовірності очікування (P_q)
-    p_q = (((m * rho)**m) / math.factorial(m)) * (1 / (1 - rho)) * p0
-    return p_q
+    # Обчислення ймовірності очікування (P_q)   
+    p_q = (((m * rho)**m) / math.factorial(m)) * (1 / (1 - rho)) * p0 
+    return p_q 
 
-@app.route('/calculate', methods=['GET'])
+# Змінили метод на POST
+@app.route('/calculate', methods=['POST'])
 def calculate():
-    # Отримуємо параметри з URL (з дефолтними значеннями з ЛР3-4)
+    # Отримуємо JSON з тіла запиту
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({"error": "Очікується JSON формат даних у тілі запиту."}), 400
+
     try:
-        lam = float(request.args.get('lam', 1800))
-        mu = float(request.args.get('mu', 100))
-        m = int(request.args.get('m', 20))
-    except ValueError:
+        # Беремо дані з JSON, якщо їх немає - залишаємо дефолтні значення
+        lam = float(data.get('lam', 1800))
+        mu = float(data.get('mu', 100))
+        m = int(data.get('m', 20))
+    except (ValueError, TypeError):
         return jsonify({"error": "Некоректний формат параметрів. Очікуються числа."}), 400
 
     rho = lam / (m * mu)
@@ -42,9 +49,9 @@ def calculate():
             "rho": round(rho, 3)
         })
 
-    # Розрахунок метрик
-    w_q = p_q / (m * mu - lam)
-    w = w_q + (1 / mu)
+    # Розрахунок метрик   
+    w_q = p_q / (m * mu - lam) 
+    w = w_q + (1 / mu) 
 
     # Повернення результату у форматі JSON
     return jsonify({
